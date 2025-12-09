@@ -69,7 +69,7 @@ const TreeView: React.FC<TreeViewProps> = ({ onProjectSelect, selectedProjectId 
   if (!mounted) return null;
 
   return (
-    <div className="h-full w-full relative z-0 flex items-center justify-center bg-gradient-to-b from-blue-50 to-blue-100">
+    <div className="h-full w-full relative z-0 flex items-center justify-center" style={{ backgroundColor: WILMA_COLORS.yellow }}>
       <div className="relative" style={{ width: '1100px', height: '100%', maxHeight: '1080px' }}>
         {/* Christmas Tree SVG */}
         <img 
@@ -95,7 +95,7 @@ const TreeView: React.FC<TreeViewProps> = ({ onProjectSelect, selectedProjectId 
                 key={project.id}
                 onClick={() => onProjectSelect(project)}
                 style={{ cursor: 'pointer' }}
-                className="transition-transform hover:scale-110"
+                className="transition-all duration-200"
               >
                 {/* Ornament circle */}
                 <circle
@@ -105,7 +105,7 @@ const TreeView: React.FC<TreeViewProps> = ({ onProjectSelect, selectedProjectId 
                   fill={WILMA_COLORS.mediumBlue}
                   stroke={isSelected ? WILMA_COLORS.yellow : 'white'}
                   strokeWidth={isSelected ? 3 : 2}
-                  className="transition-all"
+                  className="transition-all duration-200 hover:brightness-110"
                   style={{
                     filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))',
                   }}
