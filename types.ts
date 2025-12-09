@@ -1,15 +1,10 @@
-export interface Market {
+export interface Project {
   id: string;
   name: string;
   city: string;
   region: string;
   description: string;
-  dates: string;
-  lat: number;
-  lng: number;
   link: string;
-  imageUrl: string;
-  isSpecial?: boolean; // Highlight certain markets if needed
 }
 
 export enum WilmaColor {
