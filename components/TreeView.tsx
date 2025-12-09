@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PROJECTS, WILMA_COLORS } from '../constants';
 import { Project } from '../types';
+import BaumSvg from '../Baum.svg';
 
 interface TreeViewProps {
   onProjectSelect: (project: Project) => void;
@@ -73,7 +74,7 @@ const TreeView: React.FC<TreeViewProps> = ({ onProjectSelect, selectedProjectId 
       <div className="relative" style={{ width: '1100px', height: '100%', maxHeight: '1080px' }}>
         {/* Christmas Tree SVG */}
         <img 
-          src="/Baum.svg" 
+          src={BaumSvg} 
           alt="Weihnachtsbaum" 
           className="w-full h-full object-contain"
           style={{ filter: 'drop-shadow(0 10px 30px rgba(0, 0, 0, 0.1))' }}
