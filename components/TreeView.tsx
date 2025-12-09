@@ -7,36 +7,44 @@ interface TreeViewProps {
   selectedProjectId?: string;
 }
 
+// Tree layout constants
+const TREE_CONFIG = {
+  centerX: 547,
+  topY: 150,
+  bottomY: 750,
+  rows: 6,
+  baseWidth: 300,
+  topWidth: 50,
+};
+
+// Seeded random number generator for consistent positions
+const seededRandom = (seed: number) => {
+  const x = Math.sin(seed++) * 10000;
+  return x - Math.floor(x);
+};
+
 // Generate positions for ornaments distributed across the tree
 // We'll create a triangular distribution pattern to match the tree shape
 const generateOrnamentPositions = (count: number): Array<{ x: number; y: number }> => {
   const positions: Array<{ x: number; y: number }> = [];
   
-  // Tree dimensions (approximate based on the SVG)
-  // The tree trunk is centered around x=547, tree top is around y=58, bottom is around y=771
-  const centerX = 547;
-  const topY = 150;
-  const bottomY = 750;
-  const treeHeight = bottomY - topY;
-  
-  // Create rows with decreasing width from bottom to top
-  const rows = 6;
-  const projectsPerRow = Math.ceil(count / rows);
+  const treeHeight = TREE_CONFIG.bottomY - TREE_CONFIG.topY;
+  const projectsPerRow = Math.ceil(count / TREE_CONFIG.rows);
   
   let projectIndex = 0;
   
-  for (let row = 0; row < rows && projectIndex < count; row++) {
-    const yPosition = bottomY - (row / rows) * treeHeight + 50; // From bottom to top
-    const widthAtRow = 300 - (row / rows) * 250; // Narrower at top
+  for (let row = 0; row < TREE_CONFIG.rows && projectIndex < count; row++) {
+    const yPosition = TREE_CONFIG.bottomY - (row / TREE_CONFIG.rows) * treeHeight + 50; // From bottom to top
+    const widthAtRow = TREE_CONFIG.baseWidth - (row / TREE_CONFIG.rows) * (TREE_CONFIG.baseWidth - TREE_CONFIG.topWidth); // Narrower at top
     const projectsInThisRow = Math.min(projectsPerRow, count - projectIndex);
     
     for (let col = 0; col < projectsInThisRow && projectIndex < count; col++) {
       const xOffset = (col - (projectsInThisRow - 1) / 2) * (widthAtRow / projectsInThisRow);
-      const xPosition = centerX + xOffset;
+      const xPosition = TREE_CONFIG.centerX + xOffset;
       
-      // Add some randomness to make it look more natural
-      const randomXOffset = (Math.random() - 0.5) * 30;
-      const randomYOffset = (Math.random() - 0.5) * 40;
+      // Add some randomness to make it look more natural (using seeded random for consistency)
+      const randomXOffset = (seededRandom(projectIndex * 2) - 0.5) * 30;
+      const randomYOffset = (seededRandom(projectIndex * 2 + 1) - 0.5) * 40;
       
       positions.push({
         x: xPosition + randomXOffset,
