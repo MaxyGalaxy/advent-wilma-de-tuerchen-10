@@ -1,27 +1,27 @@
 import React, { useState } from 'react';
-import MarketMap from './components/MarketMap';
-import MarketSidebar from './components/MarketSidebar';
-import { Market } from './types';
+import TreeView from './components/TreeView';
+import ProjectSidebar from './components/ProjectSidebar';
+import { Project } from './types';
 
 const App: React.FC = () => {
-  const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
-  const handleMarketSelect = (market: Market) => {
-    setSelectedMarket(market);
+  const handleProjectSelect = (project: Project) => {
+    setSelectedProject(project);
   };
 
   const handleCloseSidebar = () => {
-    setSelectedMarket(null);
+    setSelectedProject(null);
   };
 
   return (
     <div className="relative h-screen w-screen bg-gray-100 overflow-hidden font-sans">
       
-      {/* Map Layer - Always Full Screen in Background */}
+      {/* Tree View Layer - Always Full Screen in Background */}
       <div className="absolute inset-0 z-0">
-        <MarketMap 
-          onMarketSelect={handleMarketSelect}
-          selectedMarketId={selectedMarket?.id}
+        <TreeView 
+          onProjectSelect={handleProjectSelect}
+          selectedProjectId={selectedProject?.id}
         />
       </div>
 
@@ -30,11 +30,11 @@ const App: React.FC = () => {
         className={`
           absolute top-0 right-0 z-20 h-full w-full md:w-[420px] 
           bg-white shadow-2xl transform transition-transform duration-300 ease-in-out
-          ${selectedMarket ? 'translate-x-0' : 'translate-x-full'}
+          ${selectedProject ? 'translate-x-0' : 'translate-x-full'}
         `}
       >
-        <MarketSidebar 
-          market={selectedMarket} 
+        <ProjectSidebar 
+          project={selectedProject} 
           onClose={handleCloseSidebar} 
         />
       </div>
