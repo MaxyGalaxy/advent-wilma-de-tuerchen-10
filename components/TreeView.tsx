@@ -61,22 +61,24 @@ const generateOrnamentPositions = (count: number): Array<{ x: number; y: number 
     const projectsInThisRow = Math.min(projectsPerRow, count - projectIndex);
     
     for (let col = 0; col < projectsInThisRow && projectIndex < count; col++) {
+      // Calculate base position for this ornament
+      const xOffset = (col - (projectsInThisRow - 1) / 2) * (widthAtRow / projectsInThisRow);
+      const baseX = TREE_CONFIG.centerX + xOffset;
+      const baseY = yPosition;
+      
       let attempts = 0;
       let validPosition = false;
-      let xPosition = 0;
-      let yPos = 0;
+      let xPosition = baseX;
+      let yPos = baseY;
       
       // Try to find a valid position that doesn't overlap
       while (!validPosition && attempts < ORNAMENT_CONFIG.maxAttempts) {
-        const xOffset = (col - (projectsInThisRow - 1) / 2) * (widthAtRow / projectsInThisRow);
-        xPosition = TREE_CONFIG.centerX + xOffset;
-        
         // Minimal randomness to keep ornaments well within tree boundaries
         const randomXOffset = (seededRandom(projectIndex * 2 + attempts * 100) - 0.5) * ORNAMENT_CONFIG.randomXOffset;
         const randomYOffset = (seededRandom(projectIndex * 2 + 1 + attempts * 100) - 0.5) * ORNAMENT_CONFIG.randomYOffset;
         
-        xPosition += randomXOffset;
-        yPos = yPosition + randomYOffset;
+        xPosition = baseX + randomXOffset;
+        yPos = baseY + randomYOffset;
         
         // Check if position is too close to any existing position
         validPosition = true;
@@ -90,22 +92,12 @@ const generateOrnamentPositions = (count: number): Array<{ x: number; y: number 
         attempts++;
       }
       
-      // Only add position if valid, or if this is the first ornament, or use fallback position
-      if (validPosition || positions.length === 0) {
-        positions.push({
-          x: xPosition,
-          y: yPos
-        });
-        projectIndex++;
-      } else {
-        // Fallback: use position without random offset if we couldn't find a valid one
-        const xOffset = (col - (projectsInThisRow - 1) / 2) * (widthAtRow / projectsInThisRow);
-        positions.push({
-          x: TREE_CONFIG.centerX + xOffset,
-          y: yPosition
-        });
-        projectIndex++;
-      }
+      // Use found position if valid, otherwise fallback to base position without randomness
+      positions.push({
+        x: validPosition ? xPosition : baseX,
+        y: validPosition ? yPos : baseY
+      });
+      projectIndex++;
     }
   }
   
