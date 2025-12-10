@@ -8,14 +8,22 @@ interface TreeViewProps {
   selectedProjectId?: string;
 }
 
-// Tree layout constants
+// Tree layout constants - adjusted to match actual SVG tree dimensions
 const TREE_CONFIG = {
   centerX: 547,
-  topY: 150,
-  bottomY: 750,
-  rows: 6,
-  baseWidth: 300,
-  topWidth: 50,
+  topY: 280,    // Start below the star
+  bottomY: 1000, // Extend further to bottom of tree
+  baseWidth: 320, // Adjusted to keep within tree boundaries
+  topWidth: 60,   // Slightly narrower top to stay within tree
+};
+
+// Ornament positioning constants
+const ORNAMENT_CONFIG = {
+  minDistance: 50,           // Minimum distance between ornaments (px)
+  maxAttempts: 50,           // Maximum attempts to find valid position
+  randomXOffset: 15,         // Maximum random X offset (px)
+  randomYOffset: 20,         // Maximum random Y offset (px)
+  widthSafetyMargin: 0.85,   // Safety margin to keep ornaments within tree
 };
 
 // Seeded random number generator for consistent positions
@@ -24,36 +32,59 @@ const seededRandom = (seed: number) => {
   return x - Math.floor(x);
 };
 
+// Check if two positions are too close (collision detection)
+const isTooClose = (pos1: { x: number; y: number }, pos2: { x: number; y: number }, minDistance: number): boolean => {
+  const dx = pos1.x - pos2.x;
+  const dy = pos1.y - pos2.y;
+  return Math.sqrt(dx * dx + dy * dy) < minDistance;
+};
+
 // Generate positions for ornaments distributed across the tree
-// We'll create a triangular distribution pattern to match the tree shape
+// Creates a natural, scattered distribution following the tree's triangular shape
 const generateOrnamentPositions = (count: number): Array<{ x: number; y: number }> => {
   const positions: Array<{ x: number; y: number }> = [];
-  
   const treeHeight = TREE_CONFIG.bottomY - TREE_CONFIG.topY;
-  const projectsPerRow = Math.ceil(count / TREE_CONFIG.rows);
   
-  let projectIndex = 0;
-  
-  for (let row = 0; row < TREE_CONFIG.rows && projectIndex < count; row++) {
-    const yPosition = TREE_CONFIG.bottomY - (row / TREE_CONFIG.rows) * treeHeight + 50; // From bottom to top
-    const widthAtRow = TREE_CONFIG.baseWidth - (row / TREE_CONFIG.rows) * (TREE_CONFIG.baseWidth - TREE_CONFIG.topWidth); // Narrower at top
-    const projectsInThisRow = Math.min(projectsPerRow, count - projectIndex);
+  for (let i = 0; i < count; i++) {
+    let attempts = 0;
+    let validPosition = false;
+    let xPosition = 0;
+    let yPosition = 0;
     
-    for (let col = 0; col < projectsInThisRow && projectIndex < count; col++) {
-      const xOffset = (col - (projectsInThisRow - 1) / 2) * (widthAtRow / projectsInThisRow);
-      const xPosition = TREE_CONFIG.centerX + xOffset;
+    // Try to find a valid position that doesn't overlap
+    while (!validPosition && attempts < ORNAMENT_CONFIG.maxAttempts) {
+      // Random Y position within tree height
+      const yRandom = seededRandom(i * 3 + attempts * 100);
+      yPosition = TREE_CONFIG.topY + yRandom * treeHeight;
       
-      // Add some randomness to make it look more natural (using seeded random for consistency)
-      const randomXOffset = (seededRandom(projectIndex * 2) - 0.5) * 30;
-      const randomYOffset = (seededRandom(projectIndex * 2 + 1) - 0.5) * 40;
+      // Calculate how far down the tree we are (0 = top, 1 = bottom)
+      const heightRatio = (yPosition - TREE_CONFIG.topY) / treeHeight;
       
-      positions.push({
-        x: xPosition + randomXOffset,
-        y: yPosition + randomYOffset
-      });
+      // Calculate maximum width at this height (triangular shape - narrower at top)
+      const maxWidthAtHeight = TREE_CONFIG.topWidth + (TREE_CONFIG.baseWidth - TREE_CONFIG.topWidth) * heightRatio;
+      const safeWidth = maxWidthAtHeight * ORNAMENT_CONFIG.widthSafetyMargin;
       
-      projectIndex++;
+      // Random X position within the width at this height
+      const xRandom = seededRandom(i * 5 + attempts * 100 + 1) - 0.5;
+      xPosition = TREE_CONFIG.centerX + xRandom * safeWidth;
+      
+      // Check if position is too close to any existing position
+      validPosition = true;
+      for (const existingPos of positions) {
+        if (isTooClose({ x: xPosition, y: yPosition }, existingPos, ORNAMENT_CONFIG.minDistance)) {
+          validPosition = false;
+          break;
+        }
+      }
+      
+      attempts++;
     }
+    
+    // Add position (will use last attempted position even if not perfectly valid after max attempts)
+    positions.push({
+      x: xPosition,
+      y: yPosition
+    });
   }
   
   return positions;
