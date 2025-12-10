@@ -18,6 +18,15 @@ const TREE_CONFIG = {
   topWidth: 60,   // Slightly narrower top to stay within tree
 };
 
+// Ornament positioning constants
+const ORNAMENT_CONFIG = {
+  minDistance: 50,           // Minimum distance between ornaments (px)
+  maxAttempts: 50,           // Maximum attempts to find valid position
+  randomXOffset: 15,         // Maximum random X offset (px)
+  randomYOffset: 20,         // Maximum random Y offset (px)
+  widthSafetyMargin: 0.85,   // Safety margin to keep ornaments within tree
+};
+
 // Seeded random number generator for consistent positions
 const seededRandom = (seed: number) => {
   const x = Math.sin(seed++) * 10000;
@@ -35,7 +44,6 @@ const isTooClose = (pos1: { x: number; y: number }, pos2: { x: number; y: number
 // We'll create a triangular distribution pattern to match the tree shape
 const generateOrnamentPositions = (count: number): Array<{ x: number; y: number }> => {
   const positions: Array<{ x: number; y: number }> = [];
-  const minDistance = 50; // Minimum distance between ornaments to prevent overlapping
   
   const treeHeight = TREE_CONFIG.bottomY - TREE_CONFIG.topY;
   const projectsPerRow = Math.ceil(count / TREE_CONFIG.rows);
@@ -49,7 +57,7 @@ const generateOrnamentPositions = (count: number): Array<{ x: number; y: number 
     
     // Calculate width at this row (triangular shape - narrower at top)
     // Add safety margin to prevent ornaments from going outside tree
-    const widthAtRow = (TREE_CONFIG.baseWidth - rowRatio * (TREE_CONFIG.baseWidth - TREE_CONFIG.topWidth)) * 0.85;
+    const widthAtRow = (TREE_CONFIG.baseWidth - rowRatio * (TREE_CONFIG.baseWidth - TREE_CONFIG.topWidth)) * ORNAMENT_CONFIG.widthSafetyMargin;
     const projectsInThisRow = Math.min(projectsPerRow, count - projectIndex);
     
     for (let col = 0; col < projectsInThisRow && projectIndex < count; col++) {
@@ -59,13 +67,13 @@ const generateOrnamentPositions = (count: number): Array<{ x: number; y: number 
       let yPos = 0;
       
       // Try to find a valid position that doesn't overlap
-      while (!validPosition && attempts < 50) {
+      while (!validPosition && attempts < ORNAMENT_CONFIG.maxAttempts) {
         const xOffset = (col - (projectsInThisRow - 1) / 2) * (widthAtRow / projectsInThisRow);
         xPosition = TREE_CONFIG.centerX + xOffset;
         
         // Minimal randomness to keep ornaments well within tree boundaries
-        const randomXOffset = (seededRandom(projectIndex * 2 + attempts * 100) - 0.5) * 15;
-        const randomYOffset = (seededRandom(projectIndex * 2 + 1 + attempts * 100) - 0.5) * 20;
+        const randomXOffset = (seededRandom(projectIndex * 2 + attempts * 100) - 0.5) * ORNAMENT_CONFIG.randomXOffset;
+        const randomYOffset = (seededRandom(projectIndex * 2 + 1 + attempts * 100) - 0.5) * ORNAMENT_CONFIG.randomYOffset;
         
         xPosition += randomXOffset;
         yPos = yPosition + randomYOffset;
@@ -73,7 +81,7 @@ const generateOrnamentPositions = (count: number): Array<{ x: number; y: number 
         // Check if position is too close to any existing position
         validPosition = true;
         for (const existingPos of positions) {
-          if (isTooClose({ x: xPosition, y: yPos }, existingPos, minDistance)) {
+          if (isTooClose({ x: xPosition, y: yPos }, existingPos, ORNAMENT_CONFIG.minDistance)) {
             validPosition = false;
             break;
           }
