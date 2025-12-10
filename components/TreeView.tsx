@@ -13,7 +13,6 @@ const TREE_CONFIG = {
   centerX: 547,
   topY: 280,    // Start below the star
   bottomY: 1000, // Extend further to bottom of tree
-  rows: 5,      // Fewer rows for better spacing
   baseWidth: 320, // Adjusted to keep within tree boundaries
   topWidth: 60,   // Slightly narrower top to stay within tree
 };
@@ -41,64 +40,51 @@ const isTooClose = (pos1: { x: number; y: number }, pos2: { x: number; y: number
 };
 
 // Generate positions for ornaments distributed across the tree
-// We'll create a triangular distribution pattern to match the tree shape
+// Creates a natural, scattered distribution following the tree's triangular shape
 const generateOrnamentPositions = (count: number): Array<{ x: number; y: number }> => {
   const positions: Array<{ x: number; y: number }> = [];
-  
   const treeHeight = TREE_CONFIG.bottomY - TREE_CONFIG.topY;
-  const projectsPerRow = Math.ceil(count / TREE_CONFIG.rows);
   
-  let projectIndex = 0;
-  
-  for (let row = 0; row < TREE_CONFIG.rows && projectIndex < count; row++) {
-    // Distribute from bottom to top more evenly
-    const rowRatio = row / TREE_CONFIG.rows;
-    const yPosition = TREE_CONFIG.bottomY - rowRatio * treeHeight;
+  for (let i = 0; i < count; i++) {
+    let attempts = 0;
+    let validPosition = false;
+    let xPosition = 0;
+    let yPosition = 0;
     
-    // Calculate width at this row (triangular shape - narrower at top)
-    // Add safety margin to prevent ornaments from going outside tree
-    const widthAtRow = (TREE_CONFIG.baseWidth - rowRatio * (TREE_CONFIG.baseWidth - TREE_CONFIG.topWidth)) * ORNAMENT_CONFIG.widthSafetyMargin;
-    const projectsInThisRow = Math.min(projectsPerRow, count - projectIndex);
-    
-    for (let col = 0; col < projectsInThisRow && projectIndex < count; col++) {
-      // Calculate base position for this ornament
-      const xOffset = (col - (projectsInThisRow - 1) / 2) * (widthAtRow / projectsInThisRow);
-      const baseX = TREE_CONFIG.centerX + xOffset;
-      const baseY = yPosition;
+    // Try to find a valid position that doesn't overlap
+    while (!validPosition && attempts < ORNAMENT_CONFIG.maxAttempts) {
+      // Random Y position within tree height
+      const yRandom = seededRandom(i * 3 + attempts * 100);
+      yPosition = TREE_CONFIG.topY + yRandom * treeHeight;
       
-      let attempts = 0;
-      let validPosition = false;
-      let xPosition = baseX;
-      let yPos = baseY;
+      // Calculate how far down the tree we are (0 = top, 1 = bottom)
+      const heightRatio = (yPosition - TREE_CONFIG.topY) / treeHeight;
       
-      // Try to find a valid position that doesn't overlap
-      while (!validPosition && attempts < ORNAMENT_CONFIG.maxAttempts) {
-        // Minimal randomness to keep ornaments well within tree boundaries
-        const randomXOffset = (seededRandom(projectIndex * 2 + attempts * 100) - 0.5) * ORNAMENT_CONFIG.randomXOffset;
-        const randomYOffset = (seededRandom(projectIndex * 2 + 1 + attempts * 100) - 0.5) * ORNAMENT_CONFIG.randomYOffset;
-        
-        xPosition = baseX + randomXOffset;
-        yPos = baseY + randomYOffset;
-        
-        // Check if position is too close to any existing position
-        validPosition = true;
-        for (const existingPos of positions) {
-          if (isTooClose({ x: xPosition, y: yPos }, existingPos, ORNAMENT_CONFIG.minDistance)) {
-            validPosition = false;
-            break;
-          }
+      // Calculate maximum width at this height (triangular shape - narrower at top)
+      const maxWidthAtHeight = TREE_CONFIG.topWidth + (TREE_CONFIG.baseWidth - TREE_CONFIG.topWidth) * heightRatio;
+      const safeWidth = maxWidthAtHeight * ORNAMENT_CONFIG.widthSafetyMargin;
+      
+      // Random X position within the width at this height
+      const xRandom = seededRandom(i * 5 + attempts * 100 + 1) - 0.5;
+      xPosition = TREE_CONFIG.centerX + xRandom * safeWidth;
+      
+      // Check if position is too close to any existing position
+      validPosition = true;
+      for (const existingPos of positions) {
+        if (isTooClose({ x: xPosition, y: yPosition }, existingPos, ORNAMENT_CONFIG.minDistance)) {
+          validPosition = false;
+          break;
         }
-        
-        attempts++;
       }
       
-      // Use found position if valid, otherwise fallback to base position without randomness
-      positions.push({
-        x: validPosition ? xPosition : baseX,
-        y: validPosition ? yPos : baseY
-      });
-      projectIndex++;
+      attempts++;
     }
+    
+    // Add position (will use last attempted position even if not perfectly valid after max attempts)
+    positions.push({
+      x: xPosition,
+      y: yPosition
+    });
   }
   
   return positions;
