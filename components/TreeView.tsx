@@ -82,12 +82,22 @@ const generateOrnamentPositions = (count: number): Array<{ x: number; y: number 
         attempts++;
       }
       
-      positions.push({
-        x: xPosition,
-        y: yPos
-      });
-      
-      projectIndex++;
+      // Only add position if valid, or if this is the first ornament, or use fallback position
+      if (validPosition || positions.length === 0) {
+        positions.push({
+          x: xPosition,
+          y: yPos
+        });
+        projectIndex++;
+      } else {
+        // Fallback: use position without random offset if we couldn't find a valid one
+        const xOffset = (col - (projectsInThisRow - 1) / 2) * (widthAtRow / projectsInThisRow);
+        positions.push({
+          x: TREE_CONFIG.centerX + xOffset,
+          y: yPosition
+        });
+        projectIndex++;
+      }
     }
   }
   
