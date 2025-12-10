@@ -8,14 +8,14 @@ interface TreeViewProps {
   selectedProjectId?: string;
 }
 
-// Tree layout constants
+// Tree layout constants - adjusted to match actual SVG tree dimensions
 const TREE_CONFIG = {
   centerX: 547,
-  topY: 150,
-  bottomY: 750,
-  rows: 6,
-  baseWidth: 300,
-  topWidth: 50,
+  topY: 280,    // Start below the star
+  bottomY: 1000, // Extend further to bottom of tree
+  rows: 5,      // Fewer rows for better spacing
+  baseWidth: 320, // Adjusted to keep within tree boundaries
+  topWidth: 60,   // Slightly narrower top to stay within tree
 };
 
 // Seeded random number generator for consistent positions
@@ -24,10 +24,18 @@ const seededRandom = (seed: number) => {
   return x - Math.floor(x);
 };
 
+// Check if two positions are too close (collision detection)
+const isTooClose = (pos1: { x: number; y: number }, pos2: { x: number; y: number }, minDistance: number): boolean => {
+  const dx = pos1.x - pos2.x;
+  const dy = pos1.y - pos2.y;
+  return Math.sqrt(dx * dx + dy * dy) < minDistance;
+};
+
 // Generate positions for ornaments distributed across the tree
 // We'll create a triangular distribution pattern to match the tree shape
 const generateOrnamentPositions = (count: number): Array<{ x: number; y: number }> => {
   const positions: Array<{ x: number; y: number }> = [];
+  const minDistance = 50; // Minimum distance between ornaments to prevent overlapping
   
   const treeHeight = TREE_CONFIG.bottomY - TREE_CONFIG.topY;
   const projectsPerRow = Math.ceil(count / TREE_CONFIG.rows);
@@ -35,21 +43,48 @@ const generateOrnamentPositions = (count: number): Array<{ x: number; y: number 
   let projectIndex = 0;
   
   for (let row = 0; row < TREE_CONFIG.rows && projectIndex < count; row++) {
-    const yPosition = TREE_CONFIG.bottomY - (row / TREE_CONFIG.rows) * treeHeight + 50; // From bottom to top
-    const widthAtRow = TREE_CONFIG.baseWidth - (row / TREE_CONFIG.rows) * (TREE_CONFIG.baseWidth - TREE_CONFIG.topWidth); // Narrower at top
+    // Distribute from bottom to top more evenly
+    const rowRatio = row / TREE_CONFIG.rows;
+    const yPosition = TREE_CONFIG.bottomY - rowRatio * treeHeight;
+    
+    // Calculate width at this row (triangular shape - narrower at top)
+    // Add safety margin to prevent ornaments from going outside tree
+    const widthAtRow = (TREE_CONFIG.baseWidth - rowRatio * (TREE_CONFIG.baseWidth - TREE_CONFIG.topWidth)) * 0.85;
     const projectsInThisRow = Math.min(projectsPerRow, count - projectIndex);
     
     for (let col = 0; col < projectsInThisRow && projectIndex < count; col++) {
-      const xOffset = (col - (projectsInThisRow - 1) / 2) * (widthAtRow / projectsInThisRow);
-      const xPosition = TREE_CONFIG.centerX + xOffset;
+      let attempts = 0;
+      let validPosition = false;
+      let xPosition = 0;
+      let yPos = 0;
       
-      // Add some randomness to make it look more natural (using seeded random for consistency)
-      const randomXOffset = (seededRandom(projectIndex * 2) - 0.5) * 30;
-      const randomYOffset = (seededRandom(projectIndex * 2 + 1) - 0.5) * 40;
+      // Try to find a valid position that doesn't overlap
+      while (!validPosition && attempts < 50) {
+        const xOffset = (col - (projectsInThisRow - 1) / 2) * (widthAtRow / projectsInThisRow);
+        xPosition = TREE_CONFIG.centerX + xOffset;
+        
+        // Minimal randomness to keep ornaments well within tree boundaries
+        const randomXOffset = (seededRandom(projectIndex * 2 + attempts * 100) - 0.5) * 15;
+        const randomYOffset = (seededRandom(projectIndex * 2 + 1 + attempts * 100) - 0.5) * 20;
+        
+        xPosition += randomXOffset;
+        yPos = yPosition + randomYOffset;
+        
+        // Check if position is too close to any existing position
+        validPosition = true;
+        for (const existingPos of positions) {
+          if (isTooClose({ x: xPosition, y: yPos }, existingPos, minDistance)) {
+            validPosition = false;
+            break;
+          }
+        }
+        
+        attempts++;
+      }
       
       positions.push({
-        x: xPosition + randomXOffset,
-        y: yPosition + randomYOffset
+        x: xPosition,
+        y: yPos
       });
       
       projectIndex++;
